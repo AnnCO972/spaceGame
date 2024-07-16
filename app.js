@@ -164,6 +164,7 @@ function intersectRect(r1,r2) {
     r2.top > r1.bottom ||
     r2.bottom < r1.top);
 }
+
 const Messages = {
   KEY_EVENT_UP: "KEY_EVENT_UP",
   KEY_EVENT_DOWN : "KEY_EVENT_DOWN",
@@ -177,7 +178,12 @@ const Messages = {
   GAME_END_WIN : "GAME_END_WIN",
   GAME_END_LOSE : "GAME_END_LOSE",
 };
-
+const leftBtn = document.getElementById('leftBtn');
+const rightBtn = document.getElementById('rightBtn');
+const upBtn = document.getElementById('upBtn');
+const downBtn = document.getElementById('downBtn');
+const enterBtn = document.getElementById('enterBtn');
+const shootBtn = document.getElementById('shootBtn');
 let gameLoopId,
     heroImg, 
     enemyImg,
@@ -210,6 +216,24 @@ let onKeyDown = function (e) {
       break; // do not block other keys
   }
 };
+leftBtn.addEventListener( 'click', (e) => {
+  eventEmitter.emit(Messages.KEY_EVENT_LEFT);
+});
+rightBtn.addEventListener('click',(e) => {
+  eventEmitter.emit(Messages.KEY_EVENT_RIGHT);
+});
+upBtn.addEventListener('click',(e) => {
+  eventEmitter.emit(Messages.KEY_EVENT_UP);
+});
+downBtn.addEventListener('click', (e) => {
+  eventEmitter.emit(Messages.KEY_EVENT_DOWN);
+});
+shootBtn.addEventListener('click',(e) => {
+  eventEmitter.emit(Messages.KEY_EVENT_SPACE);
+});
+enterBtn.addEventListener('click', (e) => {
+  eventEmitter.emit(Messages.KEY_EVENT_ENTER);
+})
 window.addEventListener('keydown', onKeyDown);
 //TODO
 
@@ -323,6 +347,9 @@ async function newLevel(){
     })
     level +=1;
     shot =0;
+    const lasers = gameObjects.filter(go => go.type === 'Laser');
+    lasers.forEach((laser) => {laser.dead = true;});
+    gameObjects = gameObjects.filter(go => go.type = 'Hero');
     await updateTexture();
     createEnemies();
     hero.width = heroSpec.width;
