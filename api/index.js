@@ -7,6 +7,9 @@ const port = 5000;
 app.use(cors());
 app.use(express.static(path.join(__dirname,'public')));
 
+app.get('/', (req,res) => {
+    res.send('Space Game Api');
+});
 app.get('/levels', (req,res) => {
     res.sendFile(path.join(__dirname,'public', 'imageData.json'));
 });
