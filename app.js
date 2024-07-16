@@ -28,6 +28,7 @@ class GameObject {
     this.width = 0;
     this.height = 0;
     this.img = undefined;
+    this.speed =0;
   }
     rectFromGameObject() {
       return {
@@ -44,19 +45,19 @@ class GameObject {
   }
 }
 class Hero extends GameObject {
-  constructor(x,y) {
+  constructor(x,y,width,height) {
     super(x,y);
-    this.width = 99,
-    this.height = 75,
     this.type = "Hero";
-    this.speed = {x:0,y:0};
+    this.width= width;
+    this.height = height;
+    this.speed = 0
     this.cooldown =0;
     this.life = 3;
     this.points = 0;
     }
     fire(){
       gameObjects.push(new Laser(this.x+45, this.y -10));
-      this.cooldown =500;
+      this.cooldown =heroSpec.cooldown;
 
       let id = setInterval(() => {
         if(this.cooldown > 0){
@@ -69,8 +70,13 @@ class Hero extends GameObject {
     canFire(){
       return this.cooldown ===0;
     }
-    addPoints(){
-      this.points +=100;
+    addPoints(enemy){
+      if (enemy)
+      {
+        this.points +=100;
+      }else{
+        this.points +=50;
+      }
     }
   updateLife(){
       this.life --;
@@ -80,12 +86,12 @@ class Hero extends GameObject {
       }
     }
 }
-
 class Enemy extends GameObject {
-  constructor(x, y) {
+  constructor(x, y,width,height) {
     super(x, y);
-    (this.width = 98), (this.height = 50);
-    this.type = "Enemy";
+    this.width = width;
+    this.height =height;
+    this.type = "Enemy"; 
     let id = setInterval(() => {
       if (this.y < canvas.height - this.height) {
         this.y += 5;
@@ -94,6 +100,9 @@ class Enemy extends GameObject {
         clearInterval(id);
       }
     }, 400)  
+  }
+  powerUp(){
+    gameObjects.push(new PowerUp(this.x - 40, this.y + 15));
   }
 }
 class Laser extends GameObject{
@@ -113,7 +122,22 @@ class Laser extends GameObject{
     }, 100);
   } 
 }
-
+class PowerUp extends GameObject {
+  constructor(x,y) {
+    super(x,y);
+    this.width = 34;
+    this.height = 33;
+    this.type = "PowerUp";
+    this.img = powerUpImg;
+    let id = setInterval(() => {
+      if(this.y < canvas.height - this.height) {
+        this.y +=5;
+      }else {
+        clearInterval(id);
+      }
+    }, 150);
+  }
+}
 class Explosion extends GameObject {
   constructor(x,y){
     super(x,y);
@@ -149,6 +173,7 @@ const Messages = {
   KEY_EVENT_ENTER : "KEY_EVENT_ENTER",
   COLLISION_ENEMY_LASER : "COLLISION_ENEMY_LASER",
   COLLISION_ENEMY_HERO: "COLLISION_ENEMY_HERO",
+  COLLISION_HERO_POWERUP : "COLLISION_HERO_POWERUP",
   GAME_END_WIN : "GAME_END_WIN",
   GAME_END_LOSE : "GAME_END_LOSE",
 };
@@ -158,11 +183,19 @@ let gameLoopId,
     enemyImg,
     laserImg,
     lifeImg,
+    powerUpImg,
     explosionImg,
+    heroSpec,
+    enemySpec,
+    lifeSpec,
+    PowerUpSpec,
     canvas, ctx,
     gameObjects = [],
     hero,
+    level = 1,
+    shot =0;
     eventEmitter = new EventEmitter();
+
 
 let onKeyDown = function (e) {
   console.log(e.keyCode);
@@ -182,13 +215,13 @@ window.addEventListener('keydown', onKeyDown);
 
 function createEnemies() {
   const MONSTER_TOTAL = 5;
-  const MONSTER_WIDTH = MONSTER_TOTAL * 98;
+  const MONSTER_WIDTH = MONSTER_TOTAL *enemySpec.width;
   const START_X = (canvas.width - MONSTER_WIDTH) / 2;
   const STOP_X = START_X + MONSTER_WIDTH;
 
-  for (let x = START_X; x < STOP_X; x += 98) {
-    for (let y = 0; y < 50 * 5; y += 50) {
-      const enemy = new Enemy(x,y);
+  for (let x = START_X; x < STOP_X; x += enemySpec.width) {
+    for (let y = 0; y < enemySpec.height * 5; y += enemySpec.height) {
+      const enemy = new Enemy(x,y, enemySpec.width ,enemySpec.height);
       enemy.img = enemyImg;
       gameObjects.push(enemy);
     }
@@ -197,9 +230,11 @@ function createEnemies() {
 function createHero() {
   hero = new Hero(
     canvas.width / 2 - 45,
-    canvas.height - canvas.height / 4
+    canvas.height - canvas.height / 4,
+    heroSpec.width, heroSpec.height
   );
   hero.img = heroImg;
+  hero.speed = heroSpec.speed;
   gameObjects.push(hero);
 }
 function drawGameObject(ctx){
@@ -208,7 +243,7 @@ function drawGameObject(ctx){
 function drawLife(){
   const START_POS = canvas.width -180;
   for(let i=0; i< hero.life; i++){
-    ctx.drawImage(lifeImg,START_POS +(45*(i+1)), canvas.height -37 )
+    ctx.drawImage(lifeImg,START_POS+(45*i), canvas.height -35 )
   }
 
 }
@@ -229,7 +264,7 @@ function updateGame(){
   drawLife();
   const enemies = gameObjects.filter(go => go.type ==='Enemy');
   const lasers = gameObjects.filter(go => go.type === 'Laser');
-
+  const powerUps = gameObjects.filter(go => go.type === 'PowerUp');
   lasers.forEach((l) => {
     enemies.forEach((m) =>{
       if(intersectRect(l.rectFromGameObject(),m.rectFromGameObject())){
@@ -237,6 +272,7 @@ function updateGame(){
           first: l, 
           second: m,
         });
+        shot += 1;
       }
     });
   });
@@ -246,6 +282,12 @@ function updateGame(){
         eventEmitter.emit(Messages.COLLISION_ENEMY_HERO,{enemy});
       }
     });
+    powerUps.forEach((powerUp) => {
+      const heroRect = hero.rectFromGameObject();
+      if(intersectRect(powerUp.rectFromGameObject(), heroRect)) {
+        eventEmitter.emit(Messages.COLLISION_HERO_POWERUP,{powerUp});
+      }
+    })
 
   gameObjects = gameObjects.filter(go => !go.dead);
 
@@ -259,17 +301,52 @@ function endGame(win)
     ctx.fillStyle = "black";
     ctx.fillRect(0,0,canvas.width, canvas.height);
     if(win){
-      displayMessage("Victory! You Won. Press [Enter] to start a new game ");
+      if(level <2)
+      {
+        displayMessage(`Victory! You Won level ${level}. Press [Enter] to start a new level `);
+      }else{
+        displayMessage("Victory! You Won. Press [Enter] to start a new game ");
+      }
     }
     else{
       displayMessage("You Died ! Press [Enter] to start a new game!"); 
+      level =0;
     }
   }, 200);
+}
+async function newLevel(){
+  if(gameLoopId){
+    clearInterval(gameLoopId);
+    eventEmitter.on(Messages.COLLISION_HERO_POWERUP,(_,{powerUp}) => {
+      powerUp.dead = true;
+      hero.addPoints(false);
+    })
+    level +=1;
+    shot =0;
+    await updateTexture();
+    createEnemies();
+    hero.width = heroSpec.width;
+    hero.height = heroSpec.height;
+    gameLoopId = setInterval(() => {
+      ctx.clearRect(0,0, canvas.width, canvas.height);
+      ctx.fillStyle= 'black';
+      ctx.fillRect(0,0, canvas.width, canvas.height);
+      ctx.font = "30px Arial";
+      ctx.fillStyle = "red";
+      ctx.textAlign = "right";
+      ctx.fillText(`Score: ${hero.points}`,180, canvas.height - 10 );
+      updateGame();
+      drawGameObject(ctx);
+    }, 100);
+
+  }
+
 }
 function restartGame(){
   if(gameLoopId){
     clearInterval(gameLoopId);
     eventEmitter.clear();
+    level = 1;
     initGame();
     gameLoopId = setInterval(() => {
       ctx.clearRect(0,0, canvas.width, canvas.height);
@@ -278,7 +355,7 @@ function restartGame(){
       ctx.font = "30px Arial";
       ctx.fillStyle = "red";
       ctx.textAlign = "right";
-      ctx.fillText(`Score: ${hero.points}`,170,746 );
+      ctx.fillText(`Score: ${hero.points}`, 180, canvas.height - 10 );
       updateGame();
       drawGameObject(ctx);
       
@@ -310,8 +387,12 @@ function initGame() {
   eventEmitter.on(Messages.COLLISION_ENEMY_LASER,(_,{first, second}) =>{
     gameObjects.push(new Explosion(second.x, second.y));
     first.dead = true;
+    if(level >=2 & shot ===5){
+      second.powerUp();
+      shot = 0;
+    }
     second.dead = true; 
-    hero.addPoints();
+    hero.addPoints(true);
 
     if(isEnnemiesDead()){
       eventEmitter.emit(Messages.GAME_END_WIN);
@@ -336,22 +417,42 @@ function initGame() {
     endGame(false);
   })
   eventEmitter.on(Messages.KEY_EVENT_ENTER,() =>{
-    restartGame();
+    if(level != 0 ){
+      newLevel();
+    }
+    else{ restartGame();}
   })
+  
+}
+async function updateTexture(){
+  try{
+    const response = await fetch('http://localhost:5000/levels');
+    if(!response.ok){
+      throw new Error('Network response was not ok'+ response.statusText);
+    }
+
+    const data = await response.json();
+    heroSpec = data.levels[level].Hero;
+    enemySpec = data.levels[level].Enemy;
+    lifeSpec = data.levels[level].Life;
+
+  enemyImg = await loadTexture(enemySpec.path);
+  heroImg = await loadTexture(heroSpec.path);
+  lifeImg = await loadTexture(lifeSpec.path);
+  }catch(error){ console.error('error loading JSON',error);}
 }
 
 window.onload = async () => {
   canvas = document.getElementById('canvas');
   ctx = canvas.getContext('2d');
-  // TODO load textures
-  enemyImg = await loadTexture('./assets/enemy1.png');
-  heroImg = await loadTexture('./assets/player1.png');
+  //load textures
+  
   laserImg = await loadTexture('./assets/laserRed.png');
   explosionImg = await loadTexture('./assets/explosion.png');
-  lifeImg = await loadTexture('./assets/life1.png');
-  // TODO draw black background
-  
+  powerUpImg = await loadTexture('./assets/powerUp.png');
+  await updateTexture();
   initGame();
+  //draw black background
   gameLoopId = setInterval(() => {
     ctx.clearRect(0,0, canvas.width, canvas.height);
     ctx.fillStyle= 'black';
@@ -359,7 +460,7 @@ window.onload = async () => {
     ctx.font = "30px Arial";
     ctx.fillStyle = "red";
     ctx.textAlign = "right";
-    ctx.fillText(`Score: ${hero.points}`,170,746 );
+    ctx.fillText(`Score: ${hero.points}`,180, canvas.height - 10);
     updateGame();
     drawGameObject(ctx);
     

@@ -1,0 +1,42 @@
+{
+    "levels": {
+        "1":{
+            "Hero":{
+                "width": 99,
+                "height":75,
+                "path":"./assets/player1.png",
+                "speed": 5,
+                "cooldown": 500
+            },
+            "Enemy":{
+                "width": 93,
+                "height":84,
+                "path":"./assets/enemy1.png"
+            },
+            "Life":{
+                "width": 35,
+                "height":27,
+                "path":"./assets/life1.png"
+            }
+        },
+        "2":{
+            "Hero":{
+                "width": 112,
+                "height":75,
+                "path":"./assets/player2.png",
+                "speed": 7,
+                "cooldown": 300
+            },
+            "Enemy":{
+                "width": 104,
+                "height":84,
+                "path":"./assets/enemy2.png"
+            },
+            "Life":{
+                "width": 37,
+                "height":26,
+                "path":"./assets/life2.png"
+            }
+        }
+    }
+}
