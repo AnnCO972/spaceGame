@@ -1,4 +1,0 @@
-{
-    "appService.defaultWebAppToDeploy": "/subscriptions/4a2df209-43a8-4636-ae2e-a340a0a51a7e/resourceGroups/Portfolio/providers/Microsoft.Web/sites/spaceGameAnnCO972",
-    "appService.deploySubpath": "api"
-}
