@@ -1,4 +1,3 @@
-const apiUrl = process.env.APP_API_URL || '/api';
 class EventEmitter {
   constructor() {
     this.listeners = {};
@@ -453,7 +452,7 @@ function initGame() {
 }
 async function updateTexture(){
   try{
-    const response = await fetch(`${apipUrl}/levels`);
+    const response = await fetch(`${window.config.apiUrl}/levels`);
     if(!response.ok){
       throw new Error('Network response was not ok'+ response.statusText);
     }
