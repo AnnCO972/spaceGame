@@ -1,3 +1,4 @@
+import config from './config';
 class EventEmitter {
   constructor() {
     this.listeners = {};
@@ -164,7 +165,6 @@ function intersectRect(r1,r2) {
     r2.top > r1.bottom ||
     r2.bottom < r1.top);
 }
-
 const Messages = {
   KEY_EVENT_UP: "KEY_EVENT_UP",
   KEY_EVENT_DOWN : "KEY_EVENT_DOWN",
@@ -453,7 +453,7 @@ function initGame() {
 }
 async function updateTexture(){
   try{
-    const response = await fetch('http://localhost:5000/levels');
+    const response = await fetch(`${config.apiUrl}/levels`);
     if(!response.ok){
       throw new Error('Network response was not ok'+ response.statusText);
     }
