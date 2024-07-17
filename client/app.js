@@ -165,7 +165,6 @@ function intersectRect(r1,r2) {
     r2.top > r1.bottom ||
     r2.bottom < r1.top);
 }
-
 const Messages = {
   KEY_EVENT_UP: "KEY_EVENT_UP",
   KEY_EVENT_DOWN : "KEY_EVENT_DOWN",
