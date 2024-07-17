@@ -1,5 +1,5 @@
 const config = {
-    apiUrl: "spagegameapi.azurewebsites.net"
+    apiUrl: "https://spagegameapi.azurewebsites.net"
     //apiUrl:"http://localhost:5000"
 };
 
